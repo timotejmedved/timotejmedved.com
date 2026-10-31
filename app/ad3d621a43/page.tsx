@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import CountdownGate from "./countdown-gate";
 import Invite from "./invite";
 
 export const metadata: Metadata = {
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
 export default function InvitePage() {
   return (
     <div className="invite-bg flex flex-1 flex-col text-zinc-100">
-      <Invite />
+      <CountdownGate>
+        <Invite />
+      </CountdownGate>
     </div>
   );
 }

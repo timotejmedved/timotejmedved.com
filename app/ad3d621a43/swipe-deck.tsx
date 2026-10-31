@@ -6,13 +6,13 @@ import { useRef, useState, type PointerEvent } from "react";
 export type Card = { src: string; caption: string; tag: string; pos?: string };
 
 const LEFT_REPLIES = [
-  "Levo? Sistem je to zabeležil kot 💚",
+  "Levo? Sistem je to zabeležil kot 🩵",
   "Funkcija »ne« je še v razvoju 🛠️",
   "Hmm, levo pri meni ne deluje. Še en like.",
   "Ok, to je bil pa definitivno like 😄",
 ];
 
-const RIGHT_REPLIES = ["Dober okus 😎", "Vedel sem 💚", "Ja, tudi meni je ta všeč", "💚"];
+const RIGHT_REPLIES = ["Dober okus 😎", "Vedel sem 🩵", "Ja, tudi meni je ta všeč", "🩵"];
 
 const THRESHOLD = 90;
 
@@ -109,7 +109,7 @@ export default function SwipeDeck({
             </div>
 
             <span
-              className="absolute top-10 left-5 -rotate-12 rounded-lg border-4 border-lime-400 px-3 py-1 font-display text-4xl font-extrabold text-lime-400 uppercase"
+              className="absolute top-10 left-5 -rotate-12 rounded-lg border-4 border-baby-400 px-3 py-1 font-display text-4xl font-extrabold text-baby-400 uppercase"
               style={{ opacity: Math.max(0, tilt) * 1.6 }}
             >
               Like
@@ -147,9 +147,9 @@ export default function SwipeDeck({
         <button
           onClick={() => fling(1)}
           aria-label="Všeč mi je"
-          className="flex size-20 items-center justify-center rounded-full bg-lime-400 text-3xl text-black transition-all hover:scale-105"
+          className="flex size-20 items-center justify-center rounded-full bg-baby-400 text-3xl text-black transition-all hover:scale-105"
         >
-          💚
+          ❤️
         </button>
       </div>
     </div>

@@ -2,19 +2,20 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { toBlob } from "html-to-image";
 import SwipeDeck, { type Card } from "./swipe-deck";
 
 // Spremeni po svoje 👇
 const MY_NAME = "Timotej";
-const PLACE = "JackJone";
+const PLACE = "Jack&Joe";
 const MY_INSTAGRAM = ""; // npr. "timotej.medved" – pusti prazno, če ga ne želiš
 
 const ABOUT: Card[] = [
-  { src: "/ad3d621a43/photos/gym1.jpg", tag: "📍 fitnes · 4–5× na teden", caption: "Naravni habitat. Tu si me videla." },
+  { src: "/ad3d621a43/photos/gym1.jpg", tag: "📍 fitnes · 4–5× na teden baje", caption: "Izven berloga. Tu si me videla." },
   { src: "/ad3d621a43/photos/bike.jpg", tag: "🚵 kolo", caption: "Druga ljubezen: kolo in razgled na koncu klanca." },
-  { src: "/ad3d621a43/photos/street.jpg", tag: "👟 izven fitnesa", caption: "Dokaz, da nimam samo trenirke." },
+  { src: "/ad3d621a43/photos/street.jpg", tag: "👟 izven fitnesa", caption: "Bussines man" },
   { src: "/ad3d621a43/photos/elevator.jpg", tag: "🛗 dvigalo", caption: "Kapa z medvedom. Ker… Medved. 🐻" },
-  { src: "/ad3d621a43/photos/poster.webp", tag: "💻 programer", caption: "Ja, imam svoj poster. Ne sprašuj.", pos: "50% 20%" },
+  { src: "/ad3d621a43/photos/poster.webp", tag: "💻 programer", caption: "Ne sprašuj.", pos: "50% 20%" },
   { src: "/ad3d621a43/photos/gym2.jpg", tag: "🔒 slačilnica", caption: "Po treningu. Sexy as hell 😏" },
 ];
 
@@ -52,7 +53,19 @@ const WEEK = [
   { day: "PET", what: "Počitek" },
 ];
 
-const DAYS = ["Petek", "Sobota", "Nedelja", "Drug dan"];
+const DAY_NAMES = ["Nedelja", "Ponedeljek", "Torek", "Sreda", "Četrtek", "Petek", "Sobota"];
+
+// Prihajajoči četrtek–nedelja, npr. "Četrtek 5. 11."
+function nextWeekDays() {
+  const now = new Date();
+  const thursday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + ((4 - now.getDay() + 7) % 7));
+  return Array.from({ length: 4 }, (_, i) => {
+    const d = new Date(thursday.getFullYear(), thursday.getMonth(), thursday.getDate() + i);
+    return `${DAY_NAMES[d.getDay()]} ${d.getDate()}. ${d.getMonth() + 1}.`;
+  });
+}
+
+const BARCODE = [3, 1, 1, 2, 4, 1, 2, 1, 1, 3, 2, 1, 1, 2, 3, 1, 4, 2, 1, 1, 2, 3, 1, 1, 3, 1, 2, 2, 1, 4, 1, 1, 2, 1, 3];
 
 type Step = "intro" | "spot" | "spotted" | "plan" | "day" | "done";
 type Mark = { x: number; y: number; hit: boolean; id: number };
@@ -72,6 +85,31 @@ export default function Invite() {
   const [lefts, setLefts] = useState<number | null>(null);
   const [muted, setMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const ticketRef = useRef<HTMLDivElement>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Na telefonu odpre deljenje (shrani v galerijo / pošlji), drugje prenese PNG
+  async function saveTicket() {
+    if (!ticketRef.current) return;
+    setSaving(true);
+    try {
+      const blob = await toBlob(ticketRef.current, { pixelRatio: 3, backgroundColor: "#0b0b0c", style: { margin: "0" } });
+      if (!blob) return;
+      const file = new File([blob], "karta-kosilo.png", { type: "image/png" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file] }).catch(() => {});
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.name;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   useEffect(() => {
     if (step !== "spot" || found) return;
@@ -143,7 +181,7 @@ export default function Invite() {
           {step === "intro" && (
             <div className="flex flex-col gap-6">
               <div>
-                <p className="font-mono text-xs uppercase tracking-[0.3em] text-lime-400">Hej 👋</p>
+                <p className="font-mono text-xs uppercase tracking-[0.3em] text-baby-400">Hej 👋</p>
                 <h1 className="mt-1 font-display text-5xl font-extrabold uppercase leading-[0.9]">
                   Jaz sem {MY_NAME}.
                   <span className="block text-white/40">Iščem spotterja.</span>
@@ -154,7 +192,7 @@ export default function Invite() {
                 <SwipeDeck cards={ABOUT} name={MY_NAME} onDone={setLefts} />
               ) : (
                 <div className="fade-up flex flex-col gap-6">
-                  <div className="flex flex-col items-center gap-4 rounded-3xl bg-gradient-to-b from-lime-400/20 to-transparent px-5 py-8 text-center ring-1 ring-lime-400/30">
+                  <div className="flex flex-col items-center gap-4 rounded-3xl bg-gradient-to-b from-baby-400/20 to-transparent px-5 py-8 text-center ring-1 ring-baby-400/30">
                     <div className="flex items-center">
                       <span className="flex size-20 items-center justify-center rounded-full bg-zinc-800 text-3xl ring-4 ring-black">
                         🫵
@@ -163,7 +201,7 @@ export default function Invite() {
                         <Image src="/ad3d621a43/photos/gym1.jpg" alt={MY_NAME} fill sizes="80px" className="object-cover object-top" />
                       </span>
                     </div>
-                    <p className="font-display text-5xl font-extrabold uppercase italic leading-none text-lime-400">
+                    <p className="font-display text-5xl font-extrabold uppercase italic leading-none text-baby-400">
                       It&apos;s a match
                     </p>
                     <p className="text-white/70">
@@ -178,7 +216,7 @@ export default function Invite() {
                   </p>
                   <button
                     onClick={startGame}
-                    className="rounded-xl bg-lime-400 py-3.5 font-display text-2xl font-bold uppercase text-black transition-all hover:-translate-y-0.5 hover:bg-lime-300"
+                    className="rounded-xl bg-baby-400 py-3.5 font-display text-2xl font-bold uppercase text-black transition-all hover:-translate-y-0.5 hover:bg-baby-300"
                   >
                     Igraj: Spot me 👀
                   </button>
@@ -192,12 +230,12 @@ export default function Invite() {
             <div className="flex flex-col gap-4">
               <div className="flex items-end justify-between">
                 <div>
-                  <p className="font-mono text-xs uppercase tracking-[0.3em] text-lime-400">
+                  <p className="font-mono text-xs uppercase tracking-[0.3em] text-baby-400">
                     Spot me · {round + 1}/{ROUNDS.length}
                   </p>
                   <h2 className="mt-1 font-display text-4xl font-extrabold uppercase leading-none">Kje sem?</h2>
                 </div>
-                <span className="font-mono text-2xl tabular-nums text-lime-400">{elapsed.toFixed(1)}s</span>
+                <span className="font-mono text-2xl tabular-nums text-baby-400">{elapsed.toFixed(1)}s</span>
               </div>
 
               <div
@@ -216,7 +254,7 @@ export default function Invite() {
                 />
                 {misses >= 4 && !found && (
                   <span
-                    className="hint-ring pointer-events-none absolute rounded-full border-2 border-lime-400/70"
+                    className="hint-ring pointer-events-none absolute rounded-full border-2 border-baby-400/70"
                     style={{
                       left: `${bx1 - 6}%`,
                       top: `${by1 - 4}%`,
@@ -229,7 +267,7 @@ export default function Invite() {
                   m.hit ? (
                     <span
                       key={m.id}
-                      className="pop pointer-events-none absolute rounded-full border-4 border-lime-400 shadow-[0_0_30px_rgb(163_230_53/0.8)]"
+                      className="pop pointer-events-none absolute rounded-full border-4 border-baby-400 shadow-[0_0_30px_rgb(137_207_240/0.8)]"
                       style={{
                         left: `${bx1 - 3}%`,
                         top: `${by1 - 2}%`,
@@ -249,7 +287,7 @@ export default function Invite() {
                 )}
               </div>
 
-              <p className={`min-h-6 text-center ${found ? "font-semibold text-lime-400" : "text-white/70"}`}>
+              <p className={`min-h-6 text-center ${found ? "font-semibold text-baby-400" : "text-white/70"}`}>
                 {found
                   ? `Našla! ${elapsed.toFixed(1)} s 🎯`
                   : missText
@@ -262,12 +300,12 @@ export default function Invite() {
           {step === "spotted" && (
             <div className="flex flex-col gap-5">
               <div>
-                <p className="font-mono text-xs uppercase tracking-[0.3em] text-lime-400">Rezultat</p>
+                <p className="font-mono text-xs uppercase tracking-[0.3em] text-baby-400">Rezultat</p>
                 <h2 className="mt-1 font-display text-5xl font-extrabold uppercase leading-none">
                   {total < 8 ? "Hitra si 👀" : total < 20 ? "Opazila si me" : "Na koncu si me le našla"}
                 </h2>
               </div>
-              <div className="rounded-2xl bg-lime-400 p-5 text-black">
+              <div className="rounded-2xl bg-baby-400 p-5 text-black">
                 <p className="font-mono text-xs uppercase tracking-[0.3em] opacity-60">Certifikat</p>
                 <p className="mt-1 font-display text-3xl font-extrabold uppercase leading-none">Uradni spotter</p>
                 <div className="mt-4 flex items-center justify-between border-t border-black/15 pt-3 font-mono text-sm">
@@ -292,7 +330,7 @@ export default function Invite() {
           {step === "plan" && (
             <div className="flex flex-col gap-5">
               <div>
-                <p className="font-mono text-xs uppercase tracking-[0.3em] text-lime-400">Trening plan · {MY_NAME}</p>
+                <p className="font-mono text-xs uppercase tracking-[0.3em] text-baby-400">Trening plan · {MY_NAME}</p>
                 <h1 className="mt-1 font-display text-5xl font-extrabold uppercase leading-none">Ta teden</h1>
               </div>
 
@@ -305,20 +343,20 @@ export default function Invite() {
                     </span>
                     <span
                       className={`flex size-6 items-center justify-center rounded-full text-sm transition-all duration-300 ${
-                        i < checked ? "scale-100 bg-lime-400 text-black" : "scale-75 bg-white/10 text-transparent"
+                        i < checked ? "scale-100 bg-baby-400 text-black" : "scale-75 bg-white/10 text-transparent"
                       }`}
                     >
                       ✓
                     </span>
                   </li>
                 ))}
-                <li className="flex items-center gap-4 bg-lime-400/10 px-4 py-4">
-                  <span className="w-9 font-mono text-xs text-lime-400">SOB</span>
+                <li className="flex items-center gap-4 bg-baby-400/10 px-4 py-4">
+                  <span className="w-9 font-mono text-xs text-baby-400">SOB</span>
                   <span className="flex-1">
-                    <span className="font-semibold text-lime-300">Cheat meal 🍔</span>
+                    <span className="font-semibold text-baby-300">Cheat meal 🍔</span>
                     <span className="block text-sm text-white/60">kosilo v {PLACE}</span>
                   </span>
-                  <span className="blink rounded-full border border-dashed border-lime-400/60 px-2 py-0.5 font-mono text-[10px] uppercase text-lime-400">
+                  <span className="blink rounded-full border border-dashed border-baby-400/60 px-2 py-0.5 font-mono text-[10px] uppercase text-baby-400">
                     spotter: ti?
                   </span>
                 </li>
@@ -335,7 +373,7 @@ export default function Invite() {
                 </p>
                 <button
                   onClick={() => setStep("day")}
-                  className="rounded-xl bg-lime-400 py-3.5 font-display text-xl font-bold uppercase text-black transition-all hover:-translate-y-0.5 hover:bg-lime-300"
+                  className="rounded-xl bg-baby-400 py-3.5 font-display text-xl font-bold uppercase text-black transition-all hover:-translate-y-0.5 hover:bg-baby-300"
                 >
                   Sem zraven
                 </button>
@@ -347,18 +385,18 @@ export default function Invite() {
           {step === "day" && (
             <div className="flex flex-col gap-5">
               <div>
-                <p className="font-mono text-xs uppercase tracking-[0.3em] text-lime-400">Odlično 💪</p>
+                <p className="font-mono text-xs uppercase tracking-[0.3em] text-baby-400">Odlično 💪</p>
                 <h2 className="mt-1 font-display text-4xl font-extrabold uppercase leading-none">Kateri dan ti paše?</h2>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {DAYS.map((d) => (
+                {nextWeekDays().map((d) => (
                   <button
                     key={d}
                     onClick={() => {
                       setDay(d);
                       setStep("done");
                     }}
-                    className="rounded-xl bg-white/[0.04] py-4 text-lg ring-1 ring-white/10 transition-all hover:-translate-y-0.5 hover:ring-lime-400/60"
+                    className="rounded-xl bg-white/[0.04] py-4 text-lg ring-1 ring-white/10 transition-all hover:-translate-y-0.5 hover:ring-baby-400/60"
                   >
                     {d}
                   </button>
@@ -370,19 +408,73 @@ export default function Invite() {
           {step === "done" && day && (
             <div className="flex flex-col gap-5">
               <div>
-                <p className="font-mono text-xs uppercase tracking-[0.3em] text-lime-400">Plan posodobljen</p>
+                <p className="font-mono text-xs uppercase tracking-[0.3em] text-baby-400">Plan posodobljen</p>
                 <h2 className="mt-1 font-display text-5xl font-extrabold uppercase leading-none">Zmenjeno 🤝</h2>
               </div>
-              <div className="rounded-2xl bg-lime-400 p-5 text-black">
-                <p className="font-mono text-xs uppercase tracking-[0.3em] opacity-60">
-                  {day === "Drug dan" ? "Dan: dogovoriva se" : day}
-                </p>
-                <p className="mt-1 font-display text-3xl font-extrabold uppercase leading-none">Kosilo v {PLACE}</p>
-                <div className="mt-4 flex items-center justify-between border-t border-black/15 pt-3 text-sm">
-                  <span>Spotter: ✓ ti ({total.toFixed(1)} s)</span>
-                  <span>Račun: jaz</span>
+              <div className="-rotate-1 drop-shadow-[0_20px_40px_rgb(137_207_240/0.15)]">
+              <div ref={ticketRef} className="-m-4 p-4">
+                <div className="rounded-t-2xl bg-baby-400 p-4 text-black">
+                  <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.3em]">
+                    <span className="font-bold">Vstopnica · kosilo</span>
+                    <span className="opacity-60">Št. 001</span>
+                  </div>
+                  <div className="mt-4 flex gap-4">
+                    <div className="relative h-32 w-24 shrink-0 overflow-hidden rounded-lg ring-2 ring-black">
+                      <Image src="/ad3d621a43/photos/elevator.jpg" alt={MY_NAME} fill sizes="96px" className="object-cover object-[50%_25%]" />
+                      <span className="absolute inset-x-0 bottom-0 bg-black py-0.5 text-center font-mono text-[9px] uppercase tracking-widest text-baby-400">
+                        Spremljevalec
+                      </span>
+                    </div>
+                    <div className="flex min-w-0 flex-col justify-between">
+                      <div>
+                        <p className="font-mono text-[10px] uppercase tracking-[0.2em] opacity-60">Kosilo v</p>
+                        <p className="font-display text-3xl font-extrabold uppercase leading-none">{PLACE}</p>
+                      </div>
+                      <div>
+                        <p className="font-mono text-[10px] uppercase tracking-[0.2em] opacity-60">Datum</p>
+                        <p className="font-display text-xl font-extrabold uppercase leading-none">{day}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative h-5 bg-baby-400">
+                  <span className="absolute top-1/2 -left-2.5 size-5 -translate-y-1/2 rounded-full bg-[#0b0b0c]" />
+                  <span className="absolute top-1/2 -right-2.5 size-5 -translate-y-1/2 rounded-full bg-[#0b0b0c]" />
+                  <span className="absolute inset-x-4 top-1/2 border-t-2 border-dashed border-black/30" />
+                </div>
+
+                <div className="rounded-b-2xl bg-baby-400 p-4 pt-1 text-black">
+                  <div className="grid grid-cols-3 gap-2 font-mono text-[10px] uppercase tracking-[0.15em]">
+                    <div>
+                      <p className="opacity-60">Gost</p>
+                      <p className="mt-0.5 text-xs font-bold">Ti ✓</p>
+                    </div>
+                    <div>
+                      <p className="opacity-60">Spotter</p>
+                      <p className="mt-0.5 text-xs font-bold">{total.toFixed(1)} s</p>
+                    </div>
+                    <div>
+                      <p className="opacity-60">Račun</p>
+                      <p className="mt-0.5 text-xs font-bold">{MY_NAME}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex h-10 items-stretch " aria-hidden>
+                    {[...BARCODE, ...BARCODE.slice().reverse()].map((w, i) => (
+                      <span key={i} className={i % 2 ? "bg-transparent" : "bg-black"} style={{ flex: w }} />
+                    ))}
+                  </div>
+                  <p className="mt-1 text-center font-mono text-[9px] tracking-[0.4em] opacity-60">TM · KOSILO · 2026</p>
                 </div>
               </div>
+              </div>
+              <button
+                onClick={saveTicket}
+                disabled={saving}
+                className="rounded-xl bg-baby-400 py-3.5 font-semibold text-black transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+              >
+                {saving ? "Pripravljam karto…" : "📸 Shrani karto kot sliko"}
+              </button>
               {MY_INSTAGRAM ? (
                 <a
                   href={`https://instagram.com/${MY_INSTAGRAM}`}
@@ -394,13 +486,13 @@ export default function Invite() {
                 </a>
               ) : null}
               <p className="text-center text-white/60">
-                {MY_INSTAGRAM ? "Ali pa mi" : "Pokaži mi"} ta zaslon, ko se naslednjič vidiva v fitnesu 😄
+                <span className="font-semibold text-white">Pošlji mi sliko karte</span> – brez nje rezervacija ne velja 😄
               </p>
 
               <div className="mt-6 flex flex-col gap-3">
-                <p className="font-mono text-xs uppercase tracking-[0.3em] text-lime-400">P.S.</p>
+                <p className="font-mono text-xs uppercase tracking-[0.3em] text-baby-400">P.S.</p>
                 <p className="text-lg leading-snug">
-                  <span className="font-semibold">Na kosilu točim jaz 💧</span>
+                  <span className="font-semibold">Na kosilu točim jaz hahah</span>
                 </p>
                 <div className="relative overflow-hidden rounded-2xl ring-1 ring-white/10">
                   <video

@@ -67,6 +67,8 @@ function nextWeekDays() {
 
 const BARCODE = [3, 1, 1, 2, 4, 1, 2, 1, 1, 3, 2, 1, 1, 2, 3, 1, 4, 2, 1, 1, 2, 3, 1, 1, 3, 1, 2, 2, 1, 4, 1, 1, 2, 1, 3];
 
+const TICKET_PHOTO = "/ad3d621a43/photos/elevator.jpg";
+
 type Step = "intro" | "spot" | "spotted" | "plan" | "day" | "done";
 type Mark = { x: number; y: number; hit: boolean; id: number };
 
@@ -87,13 +89,30 @@ export default function Invite() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const ticketRef = useRef<HTMLDivElement>(null);
   const [saving, setSaving] = useState(false);
+  const [ticketPhoto, setTicketPhoto] = useState(TICKET_PHOTO);
+
+  // Slika na karti kot data URL – sicer je Safari pri izvozu ne nariše
+  useEffect(() => {
+    const img = new window.Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 360;
+      canvas.height = Math.round((360 * img.naturalHeight) / img.naturalWidth);
+      canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+      setTicketPhoto(canvas.toDataURL("image/jpeg", 0.85));
+    };
+    img.src = TICKET_PHOTO;
+  }, []);
 
   // Na telefonu odpre deljenje (shrani v galerijo / pošlji), drugje prenese PNG
   async function saveTicket() {
     if (!ticketRef.current) return;
     setSaving(true);
     try {
-      const blob = await toBlob(ticketRef.current, { pixelRatio: 3, backgroundColor: "#0b0b0c", style: { margin: "0" } });
+      const options = { pixelRatio: 3, backgroundColor: "#0b0b0c", style: { margin: "0" } };
+      // Prvi izris v Safariju pogosto izpusti slike, zato ga naredimo dvakrat
+      await toBlob(ticketRef.current, options);
+      const blob = await toBlob(ticketRef.current, options);
       if (!blob) return;
       const file = new File([blob], "karta-kosilo.png", { type: "image/png" });
       if (navigator.canShare?.({ files: [file] })) {
@@ -420,7 +439,8 @@ export default function Invite() {
                   </div>
                   <div className="mt-4 flex gap-4">
                     <div className="relative h-32 w-24 shrink-0 overflow-hidden rounded-lg ring-2 ring-black">
-                      <Image src="/ad3d621a43/photos/elevator.jpg" alt={MY_NAME} fill sizes="96px" className="object-cover object-[50%_25%]" />
+                      {/* eslint-disable-next-line @next/next/no-img-element -- data URL za izvoz karte */}
+                      <img src={ticketPhoto} alt={MY_NAME} className="absolute inset-0 size-full object-cover object-[50%_25%]" />
                       <span className="absolute inset-x-0 bottom-0 bg-black py-0.5 text-center font-mono text-[9px] uppercase tracking-widest text-baby-400">
                         Spremljevalec
                       </span>
